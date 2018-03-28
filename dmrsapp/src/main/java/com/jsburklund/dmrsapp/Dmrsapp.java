@@ -13,13 +13,15 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import org.ros.android.RosActivity;
+import org.ros.android.android_acm_serial.AcmDevice;
+import org.ros.android.android_acm_serial.AcmDeviceActivity;
 import org.ros.android.view.camera.RosCameraPreviewView;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.io.IOException;
 
-public class Dmrsapp extends RosActivity  {
+public class Dmrsapp extends AcmDeviceActivity {
     private int cameraId;
     private RosCameraPreviewView rosCameraPreviewView;
 
@@ -91,5 +93,16 @@ public class Dmrsapp extends RosActivity  {
         }
         cam.setParameters(camParams);*/
         return cam;
+    }
+
+    @Override
+    public void onPermissionGranted(AcmDevice acmDevice) {
+        Toast.makeText(this.getApplicationContext(), "Got an ACM device: "+acmDevice.toString(), Toast.LENGTH_SHORT).show();
+
+    }
+
+    @Override
+    public void onPermissionDenied() {
+
     }
 }
