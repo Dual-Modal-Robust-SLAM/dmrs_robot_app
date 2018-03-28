@@ -96,8 +96,28 @@ public class Dmrsapp extends AcmDeviceActivity {
     }
 
     @Override
-    public void onPermissionGranted(AcmDevice acmDevice) {
+    public void onPermissionGranted(final AcmDevice acmDevice) {
         Toast.makeText(this.getApplicationContext(), "Got an ACM device: "+acmDevice.toString(), Toast.LENGTH_SHORT).show();
+
+        //Attempt to startup the lds sensor
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                    acmDevice.getOutputStream().write("testmode on\n".getBytes());
+                    acmDevice.getOutputStream().flush();
+                    Thread.sleep(500);
+                    acmDevice.getOutputStream().write("setldsrotation on\n".getBytes());
+                    acmDevice.getOutputStream().flush();
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        t.start();
 
     }
 
