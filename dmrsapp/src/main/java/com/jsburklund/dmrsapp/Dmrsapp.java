@@ -6,6 +6,8 @@ import android.app.Activity;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Window;
@@ -24,6 +26,8 @@ import java.io.IOException;
 public class Dmrsapp extends AcmDeviceActivity {
     private int cameraId;
     private RosCameraPreviewView rosCameraPreviewView;
+    private Neato robot;
+    private AcmDevice acmpasser;
 
     public Dmrsapp() {
         super("DMRSApp", "DMRSApp");
@@ -36,6 +40,7 @@ public class Dmrsapp extends AcmDeviceActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.main);
         rosCameraPreviewView = (RosCameraPreviewView) findViewById(R.id.ros_camera_preview_view);
+        this.robot = new Neato();
     }
 
     @Override
@@ -64,6 +69,7 @@ public class Dmrsapp extends AcmDeviceActivity {
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
         cameraId = 0;
+        Log.d("Main_Activity", "Init'ed this.robot: "+(this.robot==null));
 
         rosCameraPreviewView.setCamera(getCamera());
         try {
@@ -73,10 +79,12 @@ public class Dmrsapp extends AcmDeviceActivity {
             NodeConfiguration nodeConfiguration =
                     NodeConfiguration.newPublic(local_network_address.getHostAddress(), getMasterUri());
             nodeMainExecutor.execute(rosCameraPreviewView, nodeConfiguration);
+            nodeMainExecutor.execute(robot, nodeConfiguration);
         } catch (IOException e) {
             // Socket problem
             Log.e("Camera Tutorial", "socket error trying to get networking information from the master uri");
         }
+        Log.d("Main_Activity", "Done init this.robot: "+(this.robot==null));
 
     }
 
@@ -95,30 +103,45 @@ public class Dmrsapp extends AcmDeviceActivity {
         return cam;
     }
 
+
+    Runnable sendACM = new Runnable() {
+        @Override
+        public void run() {
+            Log.d("Main_Activity", "Attempting to pass acm device: "+(acmpasser==null));
+            Log.d("Main_Activity", "Attempting to pass to robot: "+(robot==null));
+            robot.setACMDevice(acmpasser);
+        } // This is your code
+    };
+
     @Override
     public void onPermissionGranted(final AcmDevice acmDevice) {
         Toast.makeText(this.getApplicationContext(), "Got an ACM device: "+acmDevice.toString(), Toast.LENGTH_SHORT).show();
 
         //Attempt to startup the lds sensor
-        Thread t = new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                    acmDevice.getOutputStream().write("testmode on\n".getBytes());
-                    acmDevice.getOutputStream().flush();
-                    Thread.sleep(500);
-                    acmDevice.getOutputStream().write("setldsrotation on\n".getBytes());
-                    acmDevice.getOutputStream().flush();
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        t.start();
-
+//        Thread t = new Thread() {
+//            public void run() {
+//                try {
+//                    Thread.sleep(1000);
+//                    acmDevice.getOutputStream().write("testmode on\n".getBytes());
+//                    acmDevice.getOutputStream().flush();
+//                    Thread.sleep(500);
+//                    acmDevice.getOutputStream().write("setldsrotation on\n".getBytes());
+//                    acmDevice.getOutputStream().flush();
+//                    Thread.sleep(500);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        };
+//        t.start();
+        //Log.d("Main_Activity", "Adding ACMDevice this.robot: "+(this.test==null));
+        Log.d("Main_Activity", "Adding ACMDevice this.robot: "+(this.robot==null));
+        //this.robot.setACMDevice(acmDevice);
+        this.acmpasser = acmDevice;
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(sendACM);
     }
 
     @Override
